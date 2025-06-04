@@ -42,28 +42,35 @@ class AuthController extends Controller
     }
 
     public function register(RegisterRequest $request)
-    {
-        DB::beginTransaction();
-        try {
-            $token = Str::random(10);
-            $expiration = Carbon::now()->addDay();
-            User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'token' => $token,
-                'token_duration' => $expiration
-            ]);
-            DB::commit();
-            VerifyEmailJob::dispatch($request->name, $request->email, $token)->delay(now()->addSecond(5));
-            Session::flash('success', 'Đăng ký tài khoản thành công, Vui lòng kiểm tra email để xác thực trước khi đăng nhập');
-            return redirect()->route('user.login');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Session::flash('error', 'Có lỗi khi đăng ký');
-        }
-        return redirect()->back();
+{
+    DB::beginTransaction();
+    try {
+        $token = Str::random(10);
+        $expiration = Carbon::now()->addDay();
+
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'token_reset_password' => $token,
+            'token_duration' => $expiration
+        ]);
+
+        DB::commit();
+
+        // Tạm thời comment lại để kiểm tra lỗi
+        // VerifyEmailJob::dispatch($request->name, $request->email, $token)->delay(now()->addSecond(5));
+
+        Session::flash('success', 'Đăng ký tài khoản thành công. Vui lòng kiểm tra email.');
+        return redirect()->route('user.login');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Lỗi đăng ký: ' . $e->getMessage());
+        Session::flash('error', 'Có lỗi khi đăng ký: ' . $e->getMessage());
+        return redirect()->back()->withInput();
     }
+}
+
 
     public function verify_email(Request $request)
     {
@@ -382,4 +389,6 @@ class AuthController extends Controller
         Session::flash('success', 'Xóa câu hỏi thành công');
         return redirect()->back();
     }
+
+    
 }

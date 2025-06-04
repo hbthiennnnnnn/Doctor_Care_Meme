@@ -22,15 +22,19 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PrescriptionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SearchController;
+use App\Http\Controllers\Admin\AdminPaymentController;
+use App\Http\Controllers\User\PaymentController;
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\AuthController as AuthUserController;
 use App\Http\Controllers\User\DoctorController;
 use App\Http\Controllers\User\FaqController;
 use App\Http\Controllers\User\NewsController as UserNewsController;
+use App\Http\User\Controllers\PaymentController as ControllersPaymentController;
 use App\Models\MedicineBatch;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Maatwebsite\Excel\Facades\Excel;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -142,6 +146,13 @@ Route::prefix('admin')->middleware('auth:admin')->group(function () {
     Route::get('/clinics/export', [ClinicController::class, 'export'])->name('clinics.export');
     Route::get('/medical-services/export', [MedicalServiceController::class, 'export'])->name('medical-services.export');
     Route::get('/managers/export', [AdminController::class, 'export'])->name('admins.export');
+
+    Route::get('/payments', [AdminPaymentController::class, 'handleCallback'])->name('admin.manager.payment'); 
+    Route::post('/payments/{payment}/approve', [AdminPaymentController::class, 'handleCallback'])->name('admin.payments.approve'); 
+    Route::post('/payments/{payment}/reject', [AdminPaymentController::class, 'handleCallback'])->name('admin.payments.reject'); 
+
+    Route::get('/payments', [AdminPaymentController::class, 'index'])->name('admin.payments.index');
+    Route::post('/payments/{id}/confirm', [AdminPaymentController::class, 'confirm'])->name('admin.payment.confirm');
 });
 Route::get('/', [HomeController::class, 'home'])->name('home');
 Route::prefix('/auth')->group(function () {
@@ -157,6 +168,10 @@ Route::prefix('/auth')->group(function () {
     Route::post('/forgot-password', [AuthUserController::class, 'forgot_password'])->name('user.forgot');
     Route::get('/recovery-password', [AuthUserController::class, 'page_recovery_password'])->name('user.recovery');
     Route::post('/recovery-password', [AuthUserController::class, 'recovery_password'])->name('user.recovery');
+
+    Route::get('/deposit', [PaymentController::class, 'depositForm'])->name('user.deposit');
+    Route::post('/deposit/redirect', [PaymentController::class, 'redirect'])->name('user.deposit.redirect');
+    Route::get('/deposit/payment', [PaymentController::class, 'showPaymentPage'])->name('user.deposit.page');
 });
 Route::prefix('/profile')->middleware('auth.user')->group(function () {
     Route::get('/overview', [AuthUserController::class, 'overview'])->name('user.overview');
@@ -173,6 +188,16 @@ Route::prefix('/profile')->middleware('auth.user')->group(function () {
     Route::get('/faq', [AuthUserController::class, 'faq'])->name('user.faq-auth');
     Route::delete('/faq/{id}/delete', [AuthUserController::class, 'faq_delete'])->name('user.faq-delete');
     Route::put('/faq/{id}', [AuthUserController::class, 'update'])->name('user.faq-update');
+
+    // Trang form nạp tiền
+Route::get('/deposit', [PaymentController::class, 'depositForm'])->name('user.deposit');
+
+// Xử lý gửi form nạp tiền
+Route::post('/deposit', [PaymentController::class, 'depositSubmit'])->name('user.deposit.submit');
+
+// (Tuỳ chọn) Xem lịch sử giao dịch
+// Route::get('/payments', [PaymentController::class, 'paymentHistory'])->name('user.payments.history');
+
 });
 Route::get('/search', [HomeController::class, 'search'])->name('user.search');
 Route::get('/doi-ngu-chuyen-gia', [DoctorController::class, 'doctors'])->name('user.doctors');
@@ -190,3 +215,4 @@ Route::post('/faq', [FaqController::class, 'ask_question'])->name('user.ask-ques
 Route::get('/faq/{slug}', [FaqController::class, 'faq_department'])->name('user.faq-department');
 Route::get('/{slugCategory}/{slug}', [UserNewsController::class, 'news_detail'])->name('user.news-detail');
 Route::get('/{slugCategory}', [UserNewsController::class, 'news'])->name('user.news');
+

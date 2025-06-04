@@ -145,6 +145,13 @@
                             <p class="text-capitalize">Nhân viên</p>
                         </a>
                     </li>
+
+                    <li class="nav-item {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.payments.index') }}">
+                            <i class="fas fa-users"></i>
+                            <p class="text-capitalize">Thanh toán</p>
+                        </a>
+                    </li>
              
                 @can('xem-danh-sach-vai-tro')
                     <li class="nav-item {{ request()->routeIs('role.*') ? 'active' : '' }}">
